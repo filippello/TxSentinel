@@ -15,7 +15,7 @@ import { AppAction, AppState } from "./state"
 import { Col, Row } from "./ui/kit/Col"
 import { showIf } from "./util"
 import { websocketConnection } from "./websocket"
-import { browserProvider, toastShow, websocketUrl } from "./window"
+import { browserProvider, ethereum, toastShow, websocketUrl } from "./window"
 import { InitialView } from "./ui/InitialView"
 import { EmptyView } from "./ui/EmptyView"
 import { TxWarningsView } from "./ui/TxWarningsView"
@@ -279,6 +279,44 @@ const useFeatures = (provider: BrowserProvider) => {
 }
 
 
+/*
+
+// Comprueba si MetaMask está instalada
+if (typeof window.ethereum !== 'undefined') {
+    console.log('MetaMask está instalada!');
+
+    // Configura el RPC automáticamente
+    async function addNetwork() {
+        try {
+            // Solicitar a MetaMask que agregue una nueva red
+            await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                    chainId: '0x43117', // Cambia esto por el chainId de la red que desees agregar (ej. 0x1 para Ethereum Mainnet)
+                    chainName: 'TxSentinel RPC etna C-Chain', // Nombre de la red
+                    nativeCurrency: {
+                        name: 'AVAX', // Nombre de la moneda nativa
+                        symbol: 'AVAX', // Símbolo de la moneda nativa
+                        decimals: 18, // Decimales de la moneda
+                    },
+                    rpcUrls: ['localhost:8080'], // URL del nodo RPC
+                    blockExplorerUrls: ['https://etherscan.io'], // URL del explorador de bloques
+                }],
+            });
+            console.log('Red agregada correctamente');
+        } catch (error) {
+            console.error('Error al agregar la red:', error);
+        }
+    }
+
+    addNetwork();
+} else {
+    console.log('Por favor, instala MetaMask para continuar.');
+}
+
+*/
+
+
 const trackingStart =
   (provider: BrowserProvider) => 
   (
@@ -288,7 +326,22 @@ const trackingStart =
     }
   ) =>
   async () => {
+
     const signer = await provider.getSigner()
+
+    await ethereumChainAdd({
+      chainId: "0x43117",
+      chainName: "TxSentinel RPC etna C-Chain",
+      nativeCurrency: {
+        name: "AVAX",
+        symbol: "AVAX",
+        decimals: 18,
+      },
+      rpcUrls: ["http://localhost:8080"],
+      blockExplorerUrls: ["https://snowtrace.io/"],
+    })()
+
+
     const permission = await Notification.requestPermission()
     if (permission !== "granted") throw "Notifications permission denied"
 
@@ -310,3 +363,35 @@ const trackingStart =
     }
   }
 
+
+
+const ethereumChainAdd = 
+  (
+    args: {
+      chainId: string
+      chainName: string
+      nativeCurrency: {
+        name: string
+        symbol: string
+        decimals: number
+      }
+      rpcUrls: List<string>
+      blockExplorerUrls: List<string>
+    }
+  ) => 
+  async () => {
+
+    if (ethereum == none) return
+
+    try {
+
+      await ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [args],
+      })
+
+    } catch (e) {
+      console.error(e)
+    }
+
+  }
